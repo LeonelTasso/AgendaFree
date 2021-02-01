@@ -1,43 +1,91 @@
 package com.example.agenda.ui.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.agenda.R;
 import com.example.agenda.dao.AlunoDao;
 import com.example.agenda.model.Aluno;
 
+import static com.example.agenda.ui.activity.ConstantesActivities.CHAVE_ALUNO;
+import static com.example.agenda.ui.activity.ConstantesActivities.TITLE_EDITA_ALUNO;
+import static com.example.agenda.ui.activity.ConstantesActivities.TITLE_NOVO_ALUNO;
+
 public class FormularioAlunoActivity extends AppCompatActivity {
 
-    public static final String TITLE = "Novo Aluno";
+
+
     private EditText campoNome;
     private EditText campoEmail;
     private EditText campoTelefone;
     final AlunoDao alunoDao = new AlunoDao();
+    private Aluno aluno;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_formulario_aluno);
-        setTitle(TITLE);
         inicializa();
-        configuraBotaoSalvar();
+
+        carregaAluno();
+
     }
 
-    private void configuraBotaoSalvar() {
-        Button botaoSalvar = findViewById(R.id.activity_formulario_botao_salvar);
-        botaoSalvar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                salva(criaAluno());
-            }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_formulario_aluno_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
-        });
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.activity_form_aluno_menu_salvar) {
+           finalizaForm();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void carregaAluno() {
+        Intent dados = getIntent();
+        if (dados.hasExtra(CHAVE_ALUNO)) {
+            aluno = (Aluno) dados.getSerializableExtra(CHAVE_ALUNO);
+            preencheCampos();
+            setTitle(TITLE_EDITA_ALUNO);
+        } else {
+            setTitle(TITLE_NOVO_ALUNO);
+            aluno = new Aluno();
+        }
+    }
+
+    private void preencheCampos() {
+        campoNome.setText(aluno.getNome());
+        campoTelefone.setText(aluno.getTelefone());
+        campoEmail.setText(aluno.getEmail());
+    }
+
+
+
+    private void finalizaForm() {
+        preencheAluno();
+        if (aluno.temIdValido()) {
+            alunoDao.edita(aluno);
+        } else {
+            alunoDao.salva(aluno);
+        }
+        finish();
     }
 
     private void inicializa() {
@@ -51,12 +99,14 @@ public class FormularioAlunoActivity extends AppCompatActivity {
         finish();
     }
 
-    private Aluno criaAluno() {
+    private void preencheAluno() {
         String nome = campoNome.getText().toString();
         String telefone = campoTelefone.getText().toString();
         String email = campoEmail.getText().toString();
 
-        return new Aluno(nome, telefone, email);
+        aluno.setNome(nome);
+        aluno.setTelefone(telefone);
+        aluno.setEmail(email);
     }
 
 }
